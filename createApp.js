@@ -29,7 +29,7 @@ const defaultEntryScript = "app.js";
 question("Name of your application: ")
   .then(res => {
     appProps.name = res;
-    return question("Github repo name: ");
+    return question("Github repo name (without .git extension): ");
   })
   .then(res => {
     appProps.githubName = res;
@@ -68,7 +68,7 @@ question("Name of your application: ")
   })
   .then(() => {
     console.log("Performing git init...");
-    return sudoInitGit(appProps.directory, appProps.githubName);
+    return sudoInitGit(appProps.directory, `${appProps.githubName}.git`);
   })
   .then(() => {
     console.log("Performing gitPull...");

@@ -43,7 +43,7 @@ app.post("/", (req, res) => {
     fse.readJsonSync(path.join(__dirname, config.appListFileName)) || [];
   const project = projects.find(p => p.githubName === repoName);
   if (!repoName || !project) {
-    res.status(404).send("Unknown repositoy");
+    res.status(404).send("Unknown repository");
     console.log(`Unknown repository requested: ${repoName}`);
     return;
   }
