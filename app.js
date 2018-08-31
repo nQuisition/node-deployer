@@ -2,6 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const crypto = require("crypto");
+const fse = require("fs-extra");
+const path = require("path");
 
 const config = require("./config");
 const {
@@ -12,15 +14,6 @@ const {
   performNpmPrune,
   runPostInit
 } = require("./utils");
-
-const projects = [
-  {
-    name: "hooks",
-    githubName: "nQuisition/HooksTest",
-    directory: "HooksTest"
-    // entryScript: "app.js"
-  }
-];
 
 const app = express();
 app.set("trust proxy", "127.0.0.1");
@@ -46,6 +39,8 @@ app.post("/", (req, res) => {
     return;
   }
   const repoName = req.body.repository.full_name;
+  const projects =
+    fse.readJsonSync(path.join(__dirname, config.appListFileName)) || [];
   const project = projects.find(p => p.githubName === repoName);
   if (!repoName || !project) {
     res.status(404).send("Unknown repositoy");

@@ -80,7 +80,10 @@ question("Name of your application: ")
   })
   .then(() => {
     console.log("Performing postinit");
-    return runSudoPostInit(appProps.directory);
+    return runSudoPostInit(appProps.directory).catch(() => {
+      console.log("No postinit script specified!");
+      return Promise.resolve();
+    });
   })
   .then(() => {
     console.log("Registering with pm2...");
