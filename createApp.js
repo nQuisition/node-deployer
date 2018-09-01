@@ -3,6 +3,7 @@ const fse = require("fs-extra");
 const path = require("path");
 
 const config = require("./config");
+const logger = require("./logger");
 const {
   pm2StartAsApache,
   pm2SaveAsApache,
@@ -67,26 +68,26 @@ question("Name of your application: ")
     return chownApache(appProps.directory);
   })
   .then(() => {
-    console.log("Performing git init...");
+    logger.info("Performing git init...");
     return sudoInitGit(appProps.directory, `${appProps.githubName}.git`);
   })
   .then(() => {
-    console.log("Performing gitPull...");
+    logger.info("Performing git pull...");
     return performSudoPull(appProps.directory);
   })
   .then(() => {
-    console.log("Performing npm install...");
+    logger.info("Performing npm install...");
     return performSudoNpmInstall(appProps.directory);
   })
   .then(() => {
-    console.log("Performing postinit");
+    logger.info("Performing postinit");
     return runSudoPostInit(appProps.directory).catch(() => {
-      console.log("No postinit script specified!");
+      logger.warn("No postinit script specified!");
       return Promise.resolve();
     });
   })
   .then(() => {
-    console.log("Registering with pm2...");
+    logger.info("Registering with pm2...");
     return pm2StartAsApache(
       appProps.name,
       path.join(config.reposDir, appProps.directory, appProps.entryScript),
@@ -95,10 +96,10 @@ question("Name of your application: ")
   })
   .then(() => pm2SaveAsApache())
   .then(() => {
-    console.log("App successfully created!");
+    logger.info("App successfully created!");
     rl.close();
   })
   .catch(err => {
-    console.log("Error! ", err.message);
+    logger.error(`Error! ${err.message}`);
     rl.close();
   });

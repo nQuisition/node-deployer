@@ -1,4 +1,5 @@
 const shell = require("shelljs");
+const path = require("path");
 
 const config = require("./config");
 
@@ -25,6 +26,9 @@ const pm2StartAsApache = (name, file, port) =>
   );
 const pm2SaveAsApache = () =>
   exec(`${sudoPrefix} PM2_HOME='/home/www-data/.pm2' pm2 save`);
+
+const removePackageLock = projectDir =>
+  exec(`rm "${path.join(reposDir, projectDir, "package-lock.json")}"`);
 
 const performPull = projectDir =>
   exec(`git -C "${reposDir + projectDir}" pull origin master`);
@@ -69,6 +73,7 @@ module.exports = {
   pm2Stop,
   pm2StartAsApache,
   pm2SaveAsApache,
+  removePackageLock,
   performPull,
   performNpmInstall,
   performNpmPrune,

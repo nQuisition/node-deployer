@@ -6,9 +6,11 @@ const fse = require("fs-extra");
 const path = require("path");
 
 const config = require("./config");
+const logger = require("./logger");
 const {
   pm2Start,
   pm2Stop,
+  removePackageLock,
   performPull,
   performNpmInstall,
   performNpmPrune,
@@ -17,7 +19,7 @@ const {
 
 const app = express();
 app.set("trust proxy", "127.0.0.1");
-app.use(morgan("combined"));
+app.use(morgan("combined", { stream: logger.stream }));
 app.use(bodyParser.json());
 
 let promise = Promise.resolve();
@@ -26,7 +28,7 @@ app.post("/", (req, res) => {
   const secret = req.header("x-hub-signature");
   if (!secret) {
     res.status(403).send("Denied: Unauthorized");
-    console.log("Access denied: secret key was not provided");
+    logger.warn("Access denied: secret key was not provided");
     return;
   }
   const hash = `sha1=${crypto
@@ -35,7 +37,7 @@ app.post("/", (req, res) => {
     .digest("hex")}`;
   if (secret !== hash) {
     res.status(403).send("Denied: Unauthorized");
-    console.log("Access denied: secret key did not match", secret, hash);
+    logger.warn("Access denied: secret key did not match");
     return;
   }
   const repoName = req.body.repository.full_name;
@@ -44,36 +46,44 @@ app.post("/", (req, res) => {
   const project = projects.find(p => p.githubName === repoName);
   if (!repoName || !project) {
     res.status(404).send("Unknown repository");
-    console.log(`Unknown repository requested: ${repoName}`);
+    logger.warn(`Unknown repository requested: ${repoName}`);
     return;
   }
+  logger.info(`Updating project "${project.name}"`);
   promise = promise.then(() =>
     pm2Stop(project.name)
       .then(() => {
-        console.log(`Stopped application ${project.name}`);
+        logger.info("Removing package-lock...");
+        return removePackageLock(project.directory);
+      })
+      .then(() => {
+        logger.info(`Stopped application ${project.name}`);
         return performPull(project.directory);
       })
       .then(() => {
-        console.log("git pull successfull!");
+        logger.info("git pull successfull!");
         return performNpmInstall(project.directory);
       })
       .then(() => {
-        console.log("npm install successfull!");
+        logger.info("npm install successfull!");
         return performNpmPrune(project.directory);
       })
       .then(() => {
-        console.log("npm prune successfull!");
-        return runPostInit(project.directory);
+        logger.info("npm prune successfull!");
+        return runPostInit(project.directory).catch(() => {
+          logger.warn("No postinit script specified!");
+          return Promise.resolve();
+        });
       })
       .then(() => {
-        console.log(`Starting ${project.name}`);
+        logger.info(`Starting ${project.name}`);
         return pm2Start(project.name);
       })
       .then(() => {
-        console.log("All done!");
+        logger.info("All done!");
       })
       .catch(err => {
-        console.log(err);
+        logger.error(`Error! ${err.message}`);
         return pm2Start(project.name);
       })
   );
@@ -81,5 +91,5 @@ app.post("/", (req, res) => {
 });
 
 app.listen(config.port, () => {
-  console.log(`Deployer app listening on port ${config.port}!`);
+  logger.info(`Deployer app listening on port ${config.port}!`);
 });
