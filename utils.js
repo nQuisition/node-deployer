@@ -28,7 +28,7 @@ const pm2SaveAsApache = () =>
   exec(`${sudoPrefix} PM2_HOME='/home/www-data/.pm2' pm2 save`);
 
 const removePackageLock = projectDir =>
-  exec(`rm "${path.join(reposDir, projectDir, "package-lock.json")}"`);
+  exec(`rm -f "${path.join(reposDir, projectDir, "package-lock.json")}"`);
 
 const performPull = projectDir =>
   exec(
