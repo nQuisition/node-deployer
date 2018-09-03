@@ -31,7 +31,10 @@ const removePackageLock = projectDir =>
   exec(`rm "${path.join(reposDir, projectDir, "package-lock.json")}"`);
 
 const performPull = projectDir =>
-  exec(`git -C "${reposDir + projectDir}" pull origin master`);
+  exec(
+    `git -C "${reposDir + projectDir}" fetch --all && git -C "${reposDir +
+      projectDir}" reset --hard origin/master`
+  );
 const performNpmInstall = projectDir =>
   exec(
     `npm --prefix "${reposDir + projectDir}" install "${reposDir +
@@ -55,7 +58,11 @@ const sudoInitGit = (projectDir, githubName) =>
     )
   );
 const performSudoPull = projectDir =>
-  exec(`${sudoPrefix} git -C "${reposDir + projectDir}" pull origin master`);
+  exec(
+    `${sudoPrefix} git -C "${reposDir +
+      projectDir}" fetch --all && ${sudoPrefix} git -C "${reposDir +
+      projectDir}" reset --hard origin/master`
+  );
 const performSudoNpmInstall = projectDir =>
   exec(
     `${sudoPrefix} npm --prefix "${reposDir + projectDir}" install "${reposDir +
